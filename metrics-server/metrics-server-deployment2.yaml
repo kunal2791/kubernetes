@@ -37,14 +37,12 @@ spec:
       - name: metrics-server
         image: k8s.gcr.io/metrics-server-amd64:v0.3.6
         args:
-          - --cert-dir=/tmp
-          - --secure-port=4443
           - /metrics-server
           - --kubelet-insecure-tls
           - --kubelet-preferred-address-types=InternalIP
           - --v=2
-          # - --requestheader-client-ca-file=/etc/kubernetes/cert/ca.pem
-          # - --source=kubernetes.summary_api:https://kubernetes.kube-system.svc?kubeletHttps=true&kubeletPort=10250&useServiceAccount=true&insecure=true
+          - --requestheader-client-ca-file=/etc/kubernetes/cert/ca.pem
+          - --source=kubernetes.summary_api:https://kubernetes.kube-system.svc?kubeletHttps=true&kubeletPort=10250&useServiceAccount=true&insecure=true
         ports:
         - name: main-port
           containerPort: 4443
