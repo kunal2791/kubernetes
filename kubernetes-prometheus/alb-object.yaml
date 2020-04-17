@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
   annotations:
     kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/subnets: subnet-151fc64c, subnet-5805e73e, subnet-6f6a7826
+    alb.ingress.kubernetes.io/subnets: subnet-151fc64csdd, subnet-5805e73edsa, subnet-6f6a7826dasd
     # alb.ingress.kubernetes.io/inbound-cidrs: 182.76.215.142/32, 182.75.133.178/32, 115.248.141.133/32, 115.248.113.189/32, 14.143.193.178/32, 172.22.65.111/32, 172.22.0.0/16, 10.1.0.0/16,
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80,"HTTPS": 443}]'
     # alb.ingress.kubernetes.io/security-groups: "sg-040f3c9c6bd553528"
@@ -14,7 +14,7 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     # alb.ingress.kubernetes.io/backend-protocol: HTTP
     alb.ingress.kubernetes.io/tags: Name=core-ums,Owner=core-ums,Project=core-ums,Env=prod
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-1:121273940081:certificate/49621abb-94f5-4184-8528-e251578563fb
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-1:121273940081:certificate/49621abb-94dsa-4184-8528-edasdsads78563fb
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
     alb.ingress.kubernetes.io/healthcheck-path: /
     alb.ingress.kubernetes.io/healthcheck-port: traffic-port
