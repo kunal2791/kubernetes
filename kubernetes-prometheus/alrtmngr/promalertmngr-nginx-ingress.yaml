@@ -8,7 +8,7 @@ metadata:
   namespace: monitoring
 spec:
   rules:
-  - host: alertmanager-core-ums.delhivery.com
+  - host: alertmanager.test.com
     http:
       paths:
       - path: "/"
