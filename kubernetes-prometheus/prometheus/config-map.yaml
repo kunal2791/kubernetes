@@ -9,34 +9,50 @@ data:
   prometheus.rules: |-
     groups:
     - name: devopsKube alert
-      rules:
-      - alert: High Pod Memory
-        expr: sum(container_memory_usage_bytes) > 1
-        for: 1m
-        labels:
-          severity: slack
-        annotations:
-          summary: High Memory Usage
-      - alert: KubePodCrashLooping
-        annotations:
-          message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
-            }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
-        expr: |
-          rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) * 60 * 5 > 0
-        for: 15m
-        labels:
-          severity: critical
-      - alert: KubePodNotReady
-        annotations:
-          message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
-            state for longer than 15 minutes.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready
-        expr: |
-          sum by (namespace, pod) (max by(namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) * on(namespace, pod) group_left(owner_kind) max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})) > 0
-        for: 15m
-        labels:
-          severity: critical
+        rules:
+        - alert: PODRestartAlert
+          annotations:
+            message: 'pod {{ $labels.pod}} in namespace {{ $labels.namespace}} restarted {{ printf "%0.0f" $value }} Times in namespace {{ $labels.namespace
+          }}/3 mins.'
+          expr: "60 * 5 * (rate(kube_pod_container_status_restarts_total[5m])) > 1 \n"
+          for: 3m
+          labels:
+            severity: warning
+
+        - alert: PODTerminateAlert
+          annotations:
+            message: 'pod {{ $labels.pod}} in namespace {{ $labels.namespace}} Terminated'
+          expr: "kube_pod_container_status_terminated == 1 \n"
+          for: 1m
+          labels:
+            severity: warning
+
+        - alert: HighCpuLoadAlert
+          annotations:
+            message: 'Cpu utility on pod {{ $labels.pod}} in namespace {{ $labels.namespace}} is {{ printf "%0.0f" $value }} Percent'
+          expr: 'round(100 * label_join(label_join(sum(rate(container_cpu_usage_seconds_total{container_name != "POD", image !=""}[1m])) by (pod_name, container_name, namespace) , "pod", "", "pod_name"), "container", "", "container_name") / ignoring(container_name, pod_name) avg(kube_pod_container_resource_limits_cpu_cores) by (pod, container, namespace)) > 60'
+          for: 1m
+          labels:
+            severity: warning
+
+        - alert: POD is in waiting state
+          annotations:
+            message: 'pod {{ $labels.pod}} in namespace {{ $labels.namespace}} restarted {{ printf "%0.0f" $value }} Times in namespace {{ $labels.namespace
+          }}/5 mins.'
+          expr: "kube_pod_container_status_waiting_reason{reason!="ContainerCreating"} == 1"
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: No replicas are  available
+          annotations:
+            message: 'pod {{ $labels.pod}} in namespace {{ $labels.namespace}} restarted {{ printf "%0.0f" $value }} Times in namespace {{ $labels.namespace
+          }}'
+          expr: "kube_deployment_status_replicas > 0 and kube_deployment_status_replicas_available == 0"
+          for: 5m
+          labels:
+            severity: critical
+
   prometheus.yml: |-
     global:
       scrape_interval: 5s
