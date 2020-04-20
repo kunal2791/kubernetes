@@ -8,7 +8,7 @@ metadata:
   namespace: monitoring
 spec:
   rules:
-  - host: prometheus-core-ums.delhivery.com
+  - host: prometheus.test.com
     http:
       paths:
       - path: "/"
