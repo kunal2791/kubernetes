@@ -1,0 +1,84 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  notifications.tmpl: |-
+    groups:
+    - name: devopsKube alert
+      rules:
+      - alert: High Pod Memory
+        expr: sum(container_memory_usage_bytes) > 1
+        for: 1m
+        labels:
+          severity: slack
+        annotations:
+          summary: High Memory Usage
+      - alert: KubePodCrashLooping
+        annotations:
+          message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
+            }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
+          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodcrashlooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) * 60 * 5 > 0
+        for: 15m
+        labels:
+          severity: critical
+      - alert: KubePodNotReady
+        annotations:
+          message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready
+            state for longer than 15 minutes.
+          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubepodnotready
+        expr: |
+          sum by (namespace, pod) (max by(namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) * on(namespace, pod) group_left(owner_kind) max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})) > 0
+        for: 15m
+        labels:
+          severity: critical
+
+  config.yml: |-
+    global:
+      smtp_smarthost: 'localhost:25'
+      smtp_from: 'alertmanager@example.org'
+    route:
+      receiver: 'team-X-mails'
+
+      group_by: ['alertname', 'cluster']
+
+      group_wait: 30s
+
+      group_interval: 5m
+
+      repeat_interval: 3h
+
+      routes:
+      - match_re:
+          service: ^(foo1|foo2|baz)$
+        receiver: team-X-mails
+
+        routes:
+        - match:
+            severity: critical
+          receiver: team-X-pager
+
+        - match:
+            service: files
+          receiver: team-Y-mails
+
+        routes:
+        - match:
+            severity: critical
+          receiver: team-Y-pager
+
+
+
+    receivers:
+    - name: 'team-X-mails'
+      email_configs:
+      - to: 'team-X+alerts@example.org, team-Y+alerts@example.org'
+
+    - name: 'team-X-pager'
+      email_configs:
+      - to: 'team-X+alerts-critical@example.org'
+      pagerduty_configs:
+      - routing_key: <team-X-key>
